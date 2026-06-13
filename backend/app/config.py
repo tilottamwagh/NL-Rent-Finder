@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # AI Provider
     AI_PROVIDER: str = "openai"
-    AI_MODEL: str = "gpt-4o-mini"
+    AI_MODEL: str = "gpt-5.4-nano"
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
