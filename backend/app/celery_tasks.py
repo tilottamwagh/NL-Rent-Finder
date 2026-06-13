@@ -24,6 +24,15 @@ celery_app.conf.update(
     },
 )
 
+def _is_valid_listing(item: dict) -> bool:
+    """Reject junk scraped from nav bars / search widgets / empty elements.
+    A real listing must have at least a price, a size, or a number of rooms,
+    and some meaningful raw text."""
+    has_data = bool(item.get("rent_price")) or item.get("size_m2") or item.get("rooms")
+    raw = (item.get("raw_text") or "").strip()
+    return has_data and len(raw) >= 20
+
+
 @celery_app.task(name="app.celery_tasks.scrape_all")
 def scrape_all():
     from app.database import SessionLocal
@@ -45,9 +54,17 @@ def scrape_all():
         try:
             items = fn()
             saved = 0
+            skipped_junk = 0
+            seen_hashes = set()  # dedup within this run, not just against the DB
             for item in items:
-                existing = db.query(Listing).filter(Listing.hash_key == item.get("hash_key")).first()
-                if existing:
+                if not _is_valid_listing(item):
+                    skipped_junk += 1
+                    continue
+                hash_key = item.get("hash_key") or str(uuid.uuid4())
+                if hash_key in seen_hashes:
+                    continue
+                seen_hashes.add(hash_key)
+                if db.query(Listing).filter(Listing.hash_key == hash_key).first():
                     continue
                 exp = datetime.now(timezone.utc) + timedelta(days=settings.LISTING_EXPIRY_DAYS)
                 listing = Listing(
@@ -64,24 +81,33 @@ def scrape_all():
                     furnished=item.get("furnished", False),
                     contact_info=item.get("contact_info"),
                     raw_text=item.get("raw_text", ""),
-                    hash_key=item.get("hash_key", str(uuid.uuid4())),
+                    hash_key=hash_key,
                     quality_score=item.get("quality_score", 5.0),
                     expires_at=exp,
                     status="active"
                 )
-                db.add(listing)
-                saved += 1
+                # savepoint per row: a duplicate/bad row is skipped, not fatal
+                try:
+                    with db.begin_nested():
+                        db.add(listing)
+                        db.flush()
+                    saved += 1
+                except Exception as row_err:
+                    print(f"{source_name}: skipped row: {row_err}")
             db.commit()
             log.status = "success"
             log.listings_found = len(items)
             log.listings_saved = saved
             log.finished_at = datetime.now(timezone.utc)
             db.commit()
+            print(f"{source_name}: {len(items)} found, {saved} saved, {skipped_junk} junk skipped")
         except Exception as e:
+            db.rollback()  # recover the session before writing the error log
             log.status = "error"
-            log.error_message = str(e)
+            log.error_message = str(e)[:1000]
             log.finished_at = datetime.now(timezone.utc)
             db.commit()
+            print(f"{source_name} scrape failed: {e}")
     db.close()
     return "Scraping complete"
 
