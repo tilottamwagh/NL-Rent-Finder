@@ -4,8 +4,8 @@ import { aiAPI } from '../api'
 import toast from 'react-hot-toast'
 
 const PROVIDERS = [
-  { id:'openai',    name:'OpenAI',    models:['gpt-4o-mini','gpt-4o','gpt-3.5-turbo'], badge:'badge-green', note:'You have this key' },
-  { id:'anthropic', name:'Anthropic Claude', models:['claude-haiku-4-5-20251001','claude-sonnet-4-6','claude-opus-4-6'], badge:'badge-purple', note:'Best for Dutch text' },
+  { id:'openai',    name:'OpenAI',    models:['gpt-5.4-nano','gpt-5.4-mini','gpt-5.4','gpt-4o-mini','gpt-4o'], badge:'badge-green', note:'You have this key' },
+  { id:'anthropic', name:'Anthropic Claude', models:['claude-haiku-4-5','claude-sonnet-4-6','claude-opus-4-8'], badge:'badge-purple', note:'Best for Dutch text' },
   { id:'gemini',    name:'Google Gemini', models:['gemini-1.5-flash','gemini-1.5-pro'], badge:'badge-blue', note:'Free tier available' },
   { id:'groq',      name:'Groq',      models:['llama-3.1-8b-instant','llama-3.1-70b-versatile'], badge:'badge-amber', note:'Very fast, free tier' },
   { id:'ollama',    name:'Ollama (local)', models:['llama3','mistral','gemma2'], badge:'badge-teal', note:'Free, runs on your VPS' },
@@ -13,7 +13,7 @@ const PROVIDERS = [
 
 export default function AISettings() {
   const [provider, setProvider] = useState('openai')
-  const [model, setModel] = useState('gpt-4o-mini')
+  const [model, setModel] = useState('gpt-5.4-nano')
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [testing, setTesting] = useState(false)
