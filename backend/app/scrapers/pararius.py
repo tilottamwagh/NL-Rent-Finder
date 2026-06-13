@@ -32,10 +32,13 @@ def scrape_pararius(max_pages: int = 3) -> list:
         try:
             url = f"{BASE}/pagina-{page}" if page > 1 else BASE
             resp = requests.get(url, headers=get_headers(), timeout=15)
+            print(f"Pararius page {page}: status={resp.status_code}, size={len(resp.content)} bytes")
             if resp.status_code != 200:
+                print(f"Pararius blocked on page {page}: {resp.status_code}")
                 break
             soup = BeautifulSoup(resp.text, "lxml")
             items = soup.select(".listing-search-item__link--title") or soup.select("section.listing-search-item")
+            print(f"Pararius page {page}: found {len(items)} items with CSS selectors")
             for item in items:
                 try:
                     parent = item.find_parent("section") or item.find_parent("li") or item

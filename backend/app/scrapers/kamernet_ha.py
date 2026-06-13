@@ -19,10 +19,13 @@ def scrape_kamernet(max_pages: int = 2) -> list:
         try:
             url = f"{base}?pageNo={page}"
             resp = requests.get(url, headers=get_headers(), timeout=15)
+            print(f"Kamernet page {page}: status={resp.status_code}, size={len(resp.content)} bytes")
             if resp.status_code != 200:
+                print(f"Kamernet blocked on page {page}: {resp.status_code}")
                 break
             soup = BeautifulSoup(resp.text, "lxml")
             items = soup.select(".search-result-item") or soup.select("[class*='listing']") or soup.select("article")
+            print(f"Kamernet page {page}: found {len(items)} items with CSS selectors")
             for item in items:
                 try:
                     raw = item.get_text(separator=" ", strip=True)
