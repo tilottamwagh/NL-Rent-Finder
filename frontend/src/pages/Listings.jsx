@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, Filter, MapPin, BedDouble, Ruler, Calendar, Phone, Share2, Trash2, ExternalLink, Euro, Star } from 'lucide-react'
+import { Plus, Search, Building2, BedDouble, Ruler, Calendar, Phone, Share2, Trash2, ExternalLink } from 'lucide-react'
 import { listingsAPI } from '../api'
 import toast from 'react-hot-toast'
 
