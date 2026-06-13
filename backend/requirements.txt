@@ -11,8 +11,8 @@ beautifulsoup4==4.12.3
 requests==2.31.0
 celery==5.4.0
 redis==5.0.4
-litellm==1.40.0
-openai>=1.27.0,<2.0.0
+litellm
+openai
 python-telegram-bot==21.3
 apscheduler==3.10.4
 python-multipart==0.0.9
