@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nlrentfinder
+      POSTGRES_PASSWORD: nlrentfinder
+      POSTGRES_DB: nlrentfinder
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://nlrentfinder:nlrentfinder@postgres/nlrentfinder
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+
+  celery:
+    build: ./backend
+    command: celery -A app.celery_tasks worker --beat --loglevel=info
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://nlrentfinder:nlrentfinder@postgres/nlrentfinder
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+volumes:
+  postgres_data:
