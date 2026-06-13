@@ -23,7 +23,7 @@ export default function QuickPaste() {
     setLoading(true); setParsed(null); setSaved(false)
     try {
       const r = await listingsAPI.parse(text)
-      setParsed({ ...r, source: 'Facebook', raw_text: text })
+      setParsed({ ...r.data, source: 'Facebook', raw_text: text })
       toast.success('AI parsed the listing!')
     } catch(e) { toast.error('Parse failed') }
     finally { setLoading(false) }
