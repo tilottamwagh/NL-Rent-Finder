@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "NL Rent Finder — Capture",
+  "version": "1.0.0",
+  "description": "One-click capture of rental posts from Facebook groups into NL Rent Finder.",
+  "permissions": ["contextMenus", "storage", "notifications"],
+  "host_permissions": [
+    "https://api.nlrentfinder.tilottamwagh.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "NL Rent Finder — Capture"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/*", "https://m.facebook.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 280px; margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+           background: #0f1117; color: #e2e8f0; padding: 14px; }
+    h1 { font-size: 14px; margin: 0 0 2px; }
+    p  { font-size: 11px; color: #94a3b8; margin: 0 0 12px; line-height: 1.4; }
+    label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px; }
+    input { width: 100%; box-sizing: border-box; padding: 7px 9px; border-radius: 8px;
+            border: 1px solid #2a2f3a; background: #161922; color: #e2e8f0; font-size: 12px; }
+    button { margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 8px;
+             background: #6366f1; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .status { margin-top: 10px; font-size: 11px; min-height: 14px; }
+    .ok { color: #34d399; } .err { color: #f87171; }
+    .hint { margin-top: 12px; font-size: 10px; color: #64748b; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <h1>NL Rent Finder — Capture</h1>
+  <p>On any Facebook group post, click the <b>＋ Capture</b> button (top-right of the post) or select the text and right-click → Capture.</p>
+
+  <label for="apiBase">API base URL</label>
+  <input id="apiBase" type="text" placeholder="https://api.nlrentfinder.tilottamwagh.com" />
+  <button id="save">Save</button>
+  <div class="status" id="status"></div>
+
+  <div class="hint">Captured posts are AI-parsed, saved as Facebook listings, and instantly matched against your active clients.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

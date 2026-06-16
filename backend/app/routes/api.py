@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Listing, RenterQuery, Match, ScraperLog, AISettings
 from app.ai_provider import parse_listing_text, understand_query, score_listing_quality, test_connection, write_match_message
-from app.matching import create_matches, find_matches
+from app.matching import create_matches, find_matches, score_match
 from app.config import settings
 from pydantic import BaseModel
 from typing import Optional, List
@@ -68,6 +68,62 @@ def parse_listing(payload: dict, db: Session=Depends(get_db)):
     parsed = parse_listing_text(raw)
     parsed["raw_text"] = raw
     return parsed
+
+class CaptureCreate(BaseModel):
+    text: str
+    source: str = "Facebook"
+    source_url: Optional[str] = None
+    group_name: Optional[str] = None
+
+@router.post("/listings/capture")
+def capture_listing(data: CaptureCreate, db: Session=Depends(get_db)):
+    """One-shot capture used by the browser extension: parse raw post text,
+    save it as a listing, then run matching against active client queries so
+    the operator gets an instant alert if a waiting client fits."""
+    raw = (data.text or "").strip()
+    if len(raw) < 15:
+        raise HTTPException(400, "Text too short to be a rental post")
+
+    # Dedup on the post text itself so the same post captured twice is ignored,
+    # but two genuinely different posts never collapse together.
+    hash_key = hashlib.md5(f"{data.source}|{raw[:200]}".encode()).hexdigest()
+    existing = db.query(Listing).filter(Listing.hash_key == hash_key).first()
+    if existing:
+        return {"duplicate": True, "listing": listing_to_dict(existing), "matches": []}
+
+    parsed = parse_listing_text(raw)
+    exp = datetime.now(timezone.utc) + timedelta(days=settings.LISTING_EXPIRY_DAYS)
+    listing = Listing(
+        id=str(uuid.uuid4()),
+        source=data.source or "Facebook",
+        source_url=data.source_url or "",
+        property_type=parsed.get("property_type") or "Apartment",
+        city=parsed.get("city") or "Netherlands",
+        neighborhood=parsed.get("neighborhood"),
+        rent_price=parsed.get("rent_price"),
+        size_m2=parsed.get("size_m2"),
+        rooms=parsed.get("rooms"),
+        available_from=parsed.get("available_from"),
+        furnished=parsed.get("furnished", False),
+        contact_info=parsed.get("contact_info"),
+        description=data.group_name,
+        raw_text=raw[:1000],
+        hash_key=hash_key,
+        quality_score=score_listing_quality(parsed),
+        expires_at=exp,
+        status="active",
+    )
+    db.add(listing); db.commit(); db.refresh(listing)
+
+    # Instant matching: which waiting clients does this new post fit?
+    matches = []
+    for q in db.query(RenterQuery).filter(RenterQuery.is_active == True).all():
+        s = score_match(listing, q)
+        if s >= 50:
+            matches.append({"client": q.name, "phone": q.phone, "score": s})
+    matches.sort(key=lambda x: x["score"], reverse=True)
+
+    return {"duplicate": False, "listing": listing_to_dict(listing), "matches": matches}
 
 # ─── QUERIES ──────────────────────────────────────────────
 class QueryCreate(BaseModel):
